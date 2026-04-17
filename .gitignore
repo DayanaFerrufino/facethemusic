@@ -1,0 +1,21 @@
+# Dataset
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+
+# Models
+models/
+*.h5
+*.keras
+*.pt
+*.pth
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
