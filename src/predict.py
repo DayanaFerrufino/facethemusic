@@ -37,16 +37,23 @@ def predict_emotion(frame):
 cap = cv2.VideoCapture(0)
 print("Press 'q' to quit")
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+def predict_emotion_from_frame(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
 
-    frame = predict_emotion(frame)
-    cv2.imshow('Emotion Detector', frame)
+    if len(faces) == 0:
+        return None
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    (x, y, w, h) = faces[0]
+    face = gray[y:y+h, x:x+w]
+    face = cv2.resize(face, (48, 48))
+    face = face.astype('float32') / 255.0
+    face = np.expand_dims(face, axis=-1)
+    face = np.expand_dims(face, axis=0)
+
+    predictions = model.predict(face, verbose=0)
+    emotion = EMOTIONS[np.argmax(predictions)]
+    return emotion
 
 cap.release()
 cv2.destroyAllWindows()
