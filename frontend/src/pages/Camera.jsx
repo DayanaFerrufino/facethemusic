@@ -1,3 +1,6 @@
+import '../styles/pages/camera.css'
+
+
 function Camera({ onGeneratePlaylist }) {
   return (
     <main>

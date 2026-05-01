@@ -3,10 +3,9 @@ import Home from './pages/Home'
 import Camera from './pages/Camera'
 import Loader from './pages/Loader'
 import Playlist from './pages/Playlist'
-import './App.css'
 
 function App() {
-  
+
   const [page, setPage] = useState('home')
 
   if (page === 'camera') {

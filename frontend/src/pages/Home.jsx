@@ -1,7 +1,8 @@
+import '../styles/pages/home.css'
+
 function Home({ onStart }) {
   return (
     <main>
-      <p>This is the home page.</p>
 
       <h1>Face the Music</h1>
 
@@ -12,6 +13,7 @@ function Home({ onStart }) {
       <button onClick={onStart}>
         Let&apos;s get started
       </button>
+
     </main>
   )
 }

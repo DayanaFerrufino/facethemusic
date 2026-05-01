@@ -1,0 +1,38 @@
+/* ------------------------------------------------------------------------------------------ */
+/* COLORS */
+
+:root {
+  /* Background colors */
+  --background-default: #ffffff;
+  --background-main: #f9f7fd;
+}
+
+
+
+/* ------------------------------------------------------------------------------------------ */
+/* GLOBAL STYLES */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background-main);
+  font-family: "Open Sans", sans-serif !important;
+}
+
+.hidden {
+  display: none !important;
+}
+
+
+
+/* ------------------------------------------------------------------------------------------ */

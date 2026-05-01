@@ -1,3 +1,5 @@
+import '../styles/pages/playlist.css'
+
 function Playlist({ onScanAgain }) {
   return (
     <main>
