@@ -1,0 +1,46 @@
+/* --------------------------------------------------------------------------------------------------------- */
+/* CAMERA PAGE */
+
+/* Layout */
+.camera-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Content Layout */
+.camera-page .content {
+    height: calc(100vh - 180px);
+    width: 100vw;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+}
+
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* COLUMN LAYOUT */
+
+/* Camera and Image Prediction Sizes */
+.camera-page .camera, .emotion-image {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 24px;
+    background-color: var(--background-default);
+    box-shadow: var(--shadow-glow-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 22px;
+    font-weight: 600;
+}

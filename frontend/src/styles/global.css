@@ -1,0 +1,85 @@
+/* --------------------------------------------------------------------------------------------------------- */
+/* IMPORTING */
+
+@import url('https://fonts.googleapis.com/css2?family=Kodchasan:wght@300;400;500;600;700&display=swap');
+
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* COLORS */
+
+:root {
+  /* Background colors */
+  --background-default: #fcf7f3;
+  --background-main: #f9eee6;
+  --background-dark: rgba(64, 54, 52, 0.18);
+
+  /* Primary color variety */
+  --color-pink: #ee979b;
+  --color-pink-hover: #EF8F94;
+  --color-pink-very-transparent: rgba(238, 151, 155, 0.07);
+  --color-pink-transparent: rgba(238, 151, 155, 0.16);
+
+  /* Base color palette */
+  --color-orange: #ffb4a2;
+  --color-yellow: #ffcdb0;
+  --color-cream: #fee7da;
+  --color-light-purple: #866a7d;
+  --color-purple: #59334d;
+
+  /* Text color palette */
+  --text-primary: #59334d;
+  --text-secondary: #403634;
+  --text-on-primary: #fee7da;
+
+  /* Border */
+  --border-purple: rgba(89, 51, 77, 0.05);
+  --border-purple-light: rgba(89, 51, 77, 0.025);
+  --border-pink: rgba(238, 151, 155, 0.12);
+  --border-pink-light: rgba(238, 151, 155, 0.05);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(54, 54, 54, 0.05), 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  --shadow-sm: 0 2px 4px rgba(54, 54, 54, 0.07), 0 2px 6px rgba(0, 0, 0, 0.06);
+
+  --shadow-md: 0 4px 8px rgba(54, 54, 54, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+
+  --shadow-lg: 0 8px 16px rgba(54, 54, 54, 0.18), 0 4px 6px rgba(0, 0, 0, 0.12);
+
+  --shadow-xl: 0 12px 24px rgba(54, 54, 54, 0.22), 0 6px 12px rgba(0, 0, 0, 0.15);
+
+  --shadow-glow-very-light: rgba(238, 151, 155, 0.085);
+
+  --shadow-glow-light: 0 6px 20px rgba(238, 151, 155, 0.18);
+
+  --shadow-glow: 0 10px 36px rgba(238, 151, 155, 0.27);
+
+  --shadow-glow-strong: 0 14px 44px rgba(238, 151, 155, 0.38);
+}
+
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* GLOBAL STYLES */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background-main);
+  font-family: 'Kodchasan', sans-serif;
+}
+
+.hidden {
+  display: none !important;
+}

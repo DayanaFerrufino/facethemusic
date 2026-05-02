@@ -1,0 +1,192 @@
+/* --------------------------------------------------------------------------------------------------------- */
+/* LOADER PAGE */
+
+/* Layout */
+.loader-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Content Layout */
+.loader-page .content {
+    height: calc(100vh - 180px);
+    width: 100vw;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding: 48px;
+}
+
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* TEXT */
+
+/* Description Text */
+.loader-page .description p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 400;
+    margin: 0;
+}
+
+/* Emotion Label */
+.loader-page .description h1 {
+    color: var(--text-primary);
+    font-size: 40px;
+    font-weight: 900;
+    margin: 24px 0 0 0;
+}
+
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* SPINNER */
+
+/* Spinner Layout */
+.loader-page .spinner {
+    position: relative;
+    width: 360px;
+    height: 360px;
+    margin: 0 auto 32px;
+    flex-shrink: 0;
+}
+
+/* Spinner size */
+.loader-page .spinner-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.loader-page .spinner-circle {
+    fill: none;
+    stroke-linecap: round;
+}
+
+/* Outer Spinner */
+.loader-page .spinner-circle-outer {
+    stroke: var(--color-pink);
+    stroke-width: 4px;
+    stroke-dasharray: 330 999;
+}
+
+/* Middle Spinner */
+.loader-page .spinner-circle-middle {
+    stroke: var(--color-pink);
+    stroke-width: 3px;
+    stroke-dasharray: 300 999;
+}
+
+/* Inner Spinner */
+.loader-page .spinner-circle-inner {
+    stroke: var(--color-pink);
+    stroke-width: 2px;
+    stroke-dasharray: 12 18;
+}
+
+/* Spinner Animation */
+.loader-page .spinner-outer {
+    animation: spin-clockwise 1s linear infinite;
+}
+
+.loader-page .spinner-middle {
+    animation: spin-counter 1.5s linear infinite;
+}
+
+.loader-page .spinner-inner {
+    animation: spin-clockwise 4s linear infinite;
+}
+
+@keyframes spin-clockwise {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin-counter {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* EMOTION IMAGE */
+
+/* Image */
+.loader-page .emotion-image {
+    position: absolute;
+    width: 235px;
+    height: 235px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background-color: var(--background-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-glow);
+    animation: glow 2s ease-in-out infinite;
+}
+
+/* Image Glow */
+@keyframes glow {
+    0%,
+    100% {
+        box-shadow: var(--shadow-glow);
+    }
+
+    50% {
+        box-shadow: var(--shadow-glow-strong);
+    }
+}
+
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* PROGRESS BAR */
+
+/* Progress Bar Layout */
+.loader-page .progress {
+    width: min(100%, 500px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Progress Bar Text */
+.loader-page .percentage {
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Progress Bar Animation */
+.loader-page .progress-bar {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background-color: var(--background-dark);
+    overflow: hidden;
+    position: relative;
+}
+
+.loader-page .progress-bar::before {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--color-pink);
+}
