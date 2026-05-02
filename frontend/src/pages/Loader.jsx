@@ -2,7 +2,9 @@ import logo from '../assets/logo.svg'
 import '../styles/pages/loader.css'
 
 function Loader({ onNext }) {
+
     return (
+
         <main className="loader-page">
 
             <div className="topbar">
@@ -32,9 +34,7 @@ function Loader({ onNext }) {
                         <circle className="spinner-circle spinner-circle-inner" cx="180" cy="180" r="130" />
                     </svg>
 
-                    <div className="emotion-detected">
-                        <p>Detected emotion</p>
-                    </div>
+                    <div className="emotion-image"></div>
 
                 </div>
 
@@ -54,7 +54,9 @@ function Loader({ onNext }) {
             </div>
             
         </main>
+
     )
+
 }
 
 export default Loader

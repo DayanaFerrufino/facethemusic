@@ -12,9 +12,15 @@
   /* Background colors */
   --background-default: #fcf7f3;
   --background-main: #f9eee6;
+  --background-dark: rgba(64, 54, 52, 0.18);
 
-  /* Base palette */
+  /* Primary color variety */
   --color-pink: #ee979b;
+  --color-pink-hover: #EF8F94;
+  --color-pink-very-transparent: rgba(238, 151, 155, 0.07);
+  --color-pink-transparent: rgba(238, 151, 155, 0.16);
+
+  /* Base color palette */
   --color-orange: #ffb4a2;
   --color-yellow: #ffcdb0;
   --color-cream: #fee7da;
@@ -24,7 +30,13 @@
   /* Text color palette */
   --text-primary: #59334d;
   --text-secondary: #403634;
-  --text-on-primary: #f4f1f4;
+  --text-on-primary: #fee7da;
+
+  /* Border */
+  --border-purple: rgba(89, 51, 77, 0.05);
+  --border-purple-light: rgba(89, 51, 77, 0.025);
+  --border-pink: rgba(238, 151, 155, 0.12);
+  --border-pink-light: rgba(238, 151, 155, 0.05);
 
   /* Shadows */
   --shadow-xs: 0 1px 2px rgba(54, 54, 54, 0.05), 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -36,6 +48,8 @@
   --shadow-lg: 0 8px 16px rgba(54, 54, 54, 0.18), 0 4px 6px rgba(0, 0, 0, 0.12);
 
   --shadow-xl: 0 12px 24px rgba(54, 54, 54, 0.22), 0 6px 12px rgba(0, 0, 0, 0.15);
+
+  --shadow-glow-very-light: rgba(238, 151, 155, 0.085);
 
   --shadow-glow-light: 0 6px 20px rgba(238, 151, 155, 0.18);
 
@@ -69,7 +83,3 @@ body {
 .hidden {
   display: none !important;
 }
-
-
-
-/* --------------------------------------------------------------------------------------------------------- */

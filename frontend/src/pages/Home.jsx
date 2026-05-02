@@ -2,7 +2,9 @@ import logo from '../assets/logo.svg'
 import '../styles/pages/home.css'
 
 function Home({ onStart }) {
+
     return (
+
         <main className="home-page">
 
             <img src={logo} alt="Face the Music logo" />
@@ -19,7 +21,9 @@ function Home({ onStart }) {
             </button>
 
         </main>
+
     )
+    
 }
 
 export default Home

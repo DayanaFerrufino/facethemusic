@@ -24,8 +24,13 @@
     padding: 48px;
 }
 
-/* Camera and Image Prediction Sizes*/
-.camera-page .camera, .emotion-detected {
+
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* COLUMN LAYOUT */
+
+/* Camera and Image Prediction Sizes */
+.camera-page .camera, .emotion-image {
     width: 100%;
     height: 100%;
     border: none;

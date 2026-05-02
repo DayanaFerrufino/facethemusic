@@ -3,7 +3,9 @@ import '../styles/pages/camera.css'
 
 
 function Camera({ onGeneratePlaylist }) {
+
     return (
+
         <main className="camera-page">
 
             <div className="topbar">
@@ -18,7 +20,7 @@ function Camera({ onGeneratePlaylist }) {
                     <p>Camera</p>
                 </div>
 
-                <div className="emotion-detected">
+                <div className="emotion-image">
                     <p>Detected emotion</p>
                 </div>
 
@@ -29,7 +31,9 @@ function Camera({ onGeneratePlaylist }) {
             </button>
 
         </main>
+
     )
+
 }
 
 export default Camera
