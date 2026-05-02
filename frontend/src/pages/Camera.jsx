@@ -12,7 +12,7 @@ function Camera({ onGeneratePlaylist }) {
                 <h1 className="topbar-title">Face The Music</h1>
             </div>
 
-            <div className="camera-content">
+            <div className="content">
                 
                 <div className="camera">
                     <p>Camera</p>

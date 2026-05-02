@@ -11,7 +11,8 @@
     text-align: center;
 }
 
-.camera-content {
+/* Content Layout */
+.camera-page .content {
     height: calc(100vh - 180px);
     width: 100vw;
     max-width: 1200px;
@@ -23,13 +24,14 @@
     padding: 48px;
 }
 
-.camera,
-.emotion-detected {
+/* Camera and Image Prediction Sizes*/
+.camera-page .camera, .emotion-detected {
     width: 100%;
     height: 100%;
     border: none;
     border-radius: 24px;
     background-color: var(--background-default);
+    box-shadow: var(--shadow-glow-light);
     display: flex;
     align-items: center;
     justify-content: center;
