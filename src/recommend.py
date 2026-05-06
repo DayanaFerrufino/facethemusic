@@ -6,14 +6,13 @@ import random
 # Map each detected emotion to iTunes search terms
 # Each emotion has multiple terms so we can randomise results across calls
 EMOTION_SEARCH_TERMS = {
-    "happy": ["feel good pop", "upbeat dance", "happy hits", "sunny pop"],
-    "sad": ["sad ballad", "heartbreak songs", "melancholy indie", "sad acoustic"],
-    "angry": ["hard rock", "metal", "rage rap", "aggressive punk"],
-    "fear": ["dark ambient", "horror soundtrack", "eerie electronic", "suspense film score"],
-    "surprise": ["experimental pop", "eclectic indie", "unexpected beats", "quirky alternative"],
-    "neutral": ["chill lo-fi", "ambient focus", "indie chill", "background acoustic"],
+    "happy": ["pop", "funk", "disco", "upbeat indie"],
+    "sad": ["acoustic indie", "soul ballad", "slowcore", "singer songwriter"],
+    "angry": ["hard rock", "metal", "punk", "hip hop"],
+    "fear": ["dark ambient", "film score", "eerie electronic", "post rock"],
+    "surprise": ["experimental", "art pop", "jazz fusion", "eclectic indie"],
+    "neutral": ["lo-fi", "ambient", "chillout", "neo soul"],
 }
-
 ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
 
 
