@@ -1,39 +1,88 @@
-import logo from '../assets/logo.svg'
-import '../styles/pages/camera.css'
+import { useEffect, useRef, useState } from "react";
+import logo from "../assets/logo.svg";
+import "../styles/pages/camera.css";
 
+function Camera({ onGeneratePlaylist, error }) {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [ready, setReady] = useState(false);
+  const [capturing, setCapturing] = useState(false);
 
-function Camera({ onGeneratePlaylist }) {
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => {
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setReady(true);
+      })
+      .catch((err) => {
+        console.error("Webcam error:", err);
+      });
 
-    return (
+    return () => {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
 
-        <main className="camera-page">
+  const handleCapture = () => {
+    if (!videoRef.current || capturing) return;
+    setCapturing(true);
 
-            <div className="topbar">
-                <img className="topbar-logo" src={logo} alt="Face the Music logo" />
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
 
-                <h1 className="topbar-title">Face The Music</h1>
-            </div>
+    canvas.toBlob(
+      (blob) => {
+        onGeneratePlaylist(blob);
+      },
+      "image/jpeg",
+      0.95,
+    );
+  };
 
-            <div className="content">
-                
-                <div className="camera">
-                    <p>Camera</p>
-                </div>
+  return (
+    <main className="camera-page">
+      <div className="topbar">
+        <img className="topbar-logo" src={logo} alt="Face the Music logo" />
+        <h1 className="topbar-title">Face The Music</h1>
+      </div>
 
-                <div className="emotion-image">
-                    <p>Detected emotion</p>
-                </div>
+      <div className="content">
+        <div className="camera">
+          <video
+            ref={videoRef}
+            className="camera-feed"
+            autoPlay
+            playsInline
+            muted
+          />
+        </div>
 
-            </div>
+        <div className="camera-hint">
+          <p>
+            {ready
+              ? "Position your face in frame, then hit Generate"
+              : "Waiting for camera access…"}
+          </p>
+        </div>
+      </div>
 
-            <button className="button" onClick={onGeneratePlaylist}>
-                Generate playlist
-            </button>
+      {error && <p className="camera-error">{error}</p>}
 
-        </main>
-
-    )
-
+      <button
+        className={`button${!ready || capturing ? " button--disabled" : ""}`}
+        onClick={handleCapture}
+        disabled={!ready || capturing}
+      >
+        {capturing ? "Analysing…" : "Generate playlist"}
+      </button>
+    </main>
+  );
 }
 
-export default Camera
+export default Camera;
