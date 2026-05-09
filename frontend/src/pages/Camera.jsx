@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import { useEffect, useRef, useState } from "react";
 import logo from "../assets/logo.svg";
 import "../styles/pages/camera.css";
@@ -27,49 +26,6 @@ function Camera({ onGeneratePlaylist, error }) {
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
-=======
-import { useEffect, useRef, useState } from 'react'
-import heart from '../assets/heart.svg'
-import logo from '../assets/logo.svg'
-import smiley from '../assets/smiley.svg'
-import '../styles/pages/camera.css'
-
-function Camera({ onGeneratePlaylist }) {
-
-    const videoRef = useRef(null)
-    const [cameraError, setCameraError] = useState('')
-
-    useEffect(() => {
-        let stream
-
-        async function startCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: false,
-                })
-
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream
-                }
-            } catch (error) {
-                console.error('Camera access failed:', error)
-                setCameraError('Camera access was blocked or is unavailable.')
-            }
-        }
-
-        startCamera()
-
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop())
-            }
-        }
-    }, [])
-
-
-    return (
->>>>>>> Stashed changes
 
   const handleCapture = () => {
     if (!videoRef.current || capturing) return;
@@ -89,7 +45,6 @@ function Camera({ onGeneratePlaylist }) {
     );
   };
 
-<<<<<<< Updated upstream
   return (
     <main className="camera-page">
       <div className="topbar">
@@ -107,60 +62,12 @@ function Camera({ onGeneratePlaylist }) {
             muted
           />
         </div>
-=======
-            <div className="content">
-                
-                <div className="camera">
-                    {cameraError ? (
-                        <p>{cameraError}</p>
-                    ) : (
-                        <>
-                            <video
-                                ref={videoRef}
-                                className="camera-video"
-                                autoPlay
-                                playsInline
-                                muted
-                            />
-
-                            <div className="camera-overlay">
-
-                                <div className="face-frame">
-                                    <span className="frame-corner top-left"></span>
-                                    <span className="frame-corner top-right"></span>
-                                    <span className="frame-corner bottom-left"></span>
-                                    <span className="frame-corner bottom-right"></span>
-
-
-                                    <img
-                                        className="camera-instruction-icon"
-                                        src={smiley}
-                                        alt=""
-                                    />
-                                    <p>Center your face<br />in the frame</p>
-                                </div>
-
-                            </div>
-                        </>
-                    )}
-                </div>
-
-
-                <div className="emotion-image">
-                    <img
-                        className="emotion-placeholder-icon"
-                        src={heart}
-                        alt=""
-                    />
-                    <p>Your emotion will<br />appear here after scan</p>
-                </div>
->>>>>>> Stashed changes
 
         <div className="camera-hint">
           <p>
             {ready
               ? "Position your face in frame, then hit Generate"
-              : "Waiting for camera access…"}
+              : "Waiting for camera access..."}
           </p>
         </div>
       </div>
@@ -172,7 +79,7 @@ function Camera({ onGeneratePlaylist }) {
         onClick={handleCapture}
         disabled={!ready || capturing}
       >
-        {capturing ? "Analysing…" : "Generate playlist"}
+        {capturing ? "Analysing..." : "Generate playlist"}
       </button>
     </main>
   );
