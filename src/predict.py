@@ -1,9 +1,12 @@
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
+import os
 
 # Load model
-model = load_model("models/emotion_model.keras")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+model = load_model(os.path.join(BASE_DIR, "models", "emotion_model.keras"))
 EMOTIONS = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 # Load OpenCV face detector
