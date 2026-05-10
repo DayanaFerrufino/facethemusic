@@ -7,7 +7,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 model = load_model(os.path.join(BASE_DIR, "models", "emotion_model.keras"))
-EMOTIONS = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+EMOTIONS = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 # Load OpenCV face detector
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')

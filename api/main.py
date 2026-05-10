@@ -39,7 +39,10 @@ async def detect_face(file: UploadFile = File(...)):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
 
-    return {"has_face": len(faces) > 0}
+    has_face = len(faces) > 0
+    emotion = predict_emotion_from_frame(frame) if has_face else None
+
+    return {"has_face": has_face, "emotion": emotion}
 
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):

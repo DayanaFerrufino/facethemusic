@@ -1,20 +1,37 @@
 import { useEffect, useRef, useState } from "react";
-import catEmotion from "../assets/cat_emotion.svg";
-import catCamera from "../assets/cat_camera.svg";
-import catWait from "../assets/cat_wait.svg";
-import catError from "../assets/cat_error.svg";
-import logo from "../assets/logo.svg";
+import logo from "../assets/brand/logo.svg";
+import catCamera from "../assets/camera/camera.svg";
+import catEmotion from "../assets/camera/emotion.svg";
+import catError from "../assets/camera/error.svg";
+import catWait from "../assets/camera/wait.svg";
+import angryIcon from "../assets/emotions/angry.png";
+import disgustIcon from "../assets/emotions/disgust.png";
+import fearIcon from "../assets/emotions/fear.png";
+import happyIcon from "../assets/emotions/happy.png";
+import neutralIcon from "../assets/emotions/neutral.png";
+import sadIcon from "../assets/emotions/sad.png";
+import surpriseIcon from "../assets/emotions/surprise.png";
 import "../styles/pages/camera.css";
 
 const API_URL = "http://localhost:8000";
+const EMOTION_ICONS = {
+  angry: angryIcon,
+  disgust: disgustIcon,
+  fear: fearIcon,
+  happy: happyIcon,
+  neutral: neutralIcon,
+  sad: sadIcon,
+  surprise: surpriseIcon,
+};
 
-function Camera({ onGeneratePlaylist, error }) {
+function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [hasFace, setHasFace] = useState(false);
+  const [detectedEmotion, setDetectedEmotion] = useState(null);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -69,24 +86,30 @@ function Camera({ onGeneratePlaylist, error }) {
         const data = await response.json();
 
         if (!stopped) {
-          setHasFace(Boolean(data.has_face));
+          const nextHasFace = Boolean(data.has_face);
+          const nextEmotion = nextHasFace ? data.emotion || null : null;
+          setHasFace(nextHasFace);
+          setDetectedEmotion(nextEmotion);
+          onPreviewEmotion?.(nextEmotion);
         }
       } catch (err) {
         console.error("Face detection failed:", err);
         if (!stopped) {
           setHasFace(false);
+          setDetectedEmotion(null);
+          onPreviewEmotion?.(null);
         }
       }
     };
 
     detectFace();
-    const intervalId = setInterval(detectFace, 900);
+    const intervalId = setInterval(detectFace, 1500);
 
     return () => {
       stopped = true;
       clearInterval(intervalId);
     };
-  }, [ready, cameraError]);
+  }, [ready, cameraError, onPreviewEmotion]);
 
   const handleCapture = () => {
     if (!videoRef.current || capturing || !ready) return;
@@ -156,10 +179,24 @@ function Camera({ onGeneratePlaylist, error }) {
         </div>
 
         {ready && (
-          <div className="camera-hint">
-            <img src={catEmotion} alt="" className="camera-emotion-icon" />
+          <div
+            className={`camera-emotion${
+              detectedEmotion ? " camera-emotion--detected" : ""
+            }`}
+          >
+            <img
+              src={
+                detectedEmotion
+                  ? EMOTION_ICONS[detectedEmotion] || catEmotion
+                  : catEmotion
+              }
+              alt=""
+              className="camera-emotion-icon"
+            />
             <p>
-              Your emotion will appear here after scan
+              {detectedEmotion
+                ? `${detectedEmotion}`
+                : "Your emotion will appear here after scan"}
             </p>
           </div>
 

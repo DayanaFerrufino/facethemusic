@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from model import build_model
 
 data_dir = "data"
@@ -8,10 +9,13 @@ BATCH_SIZE = 64
 EPOCHS = 30
 EMOTIONS = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
-# Data generators
 train_datagen = ImageDataGenerator(
     rescale=1./255,
-    rotation_range=10,
+    rotation_range=15,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    zoom_range=0.1,
+    brightness_range=[0.8, 1.2],
     horizontal_flip=True
 )
 
@@ -45,11 +49,25 @@ model.compile(
 
 model.summary()
 
+callbacks = [
+    EarlyStopping(
+        monitor="val_accuracy",
+        patience=6,
+        restore_best_weights=True
+    ),
+    ModelCheckpoint(
+        "models/emotion_model.keras",
+        monitor="val_accuracy",
+        save_best_only=True
+    )
+]
+
 # Train
 history = model.fit(
     train_gen,
     validation_data=test_gen,
-    epochs=EPOCHS
+    epochs=EPOCHS,
+    callbacks=callbacks
 )
 
 # Save

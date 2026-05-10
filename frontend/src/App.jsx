@@ -11,11 +11,13 @@ function App() {
   const [emotion, setEmotion] = useState(null);
   const [songs, setSongs] = useState([]);
   const [error, setError] = useState(null);
+  const [previewEmotion, setPreviewEmotion] = useState(null);
+  const [pendingPlaylist, setPendingPlaylist] = useState(null);
 
-  // Once on loader page, fire the API call
   const handleGeneratePlaylist = async (imageBlob) => {
     setPage("loader");
     setError(null);
+    setPendingPlaylist(null);
 
     const formData = new FormData();
     formData.append("file", imageBlob, "capture.jpg");
@@ -36,9 +38,10 @@ function App() {
         return;
       }
 
-      setEmotion(data.emotion);
-      setSongs(data.songs);
-      setPage("playlist");
+      setPendingPlaylist({
+        emotion: data.emotion,
+        songs: data.songs,
+      });
     } catch (err) {
       console.error(err);
       setError("Could not reach the server. Is the API running?");
@@ -46,12 +49,33 @@ function App() {
     }
   };
 
+  const handleLoaderDone = () => {
+    if (!pendingPlaylist) return;
+
+    setEmotion(pendingPlaylist.emotion);
+    setSongs(pendingPlaylist.songs);
+    setPendingPlaylist(null);
+    setPage("playlist");
+  };
+
   if (page === "camera") {
-    return <Camera onGeneratePlaylist={handleGeneratePlaylist} error={error} />;
+    return(
+      <Camera 
+        onGeneratePlaylist={handleGeneratePlaylist} 
+        error={error}
+        onPreviewEmotion={setPreviewEmotion}
+      />
+    );
   }
 
   if (page === "loader") {
-    return <Loader />;
+    return (
+      <Loader
+        emotion={pendingPlaylist?.emotion || previewEmotion}
+        isComplete={Boolean(pendingPlaylist)}
+        onDone={handleLoaderDone}
+      />
+    );
   }
 
   if (page === "playlist") {
