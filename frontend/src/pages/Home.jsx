@@ -1,4 +1,4 @@
-import logo from '../assets/logo.svg'
+import logo from "../assets/brand/logo.svg";
 import '../styles/pages/home.css'
 
 function Home({ onStart }) {

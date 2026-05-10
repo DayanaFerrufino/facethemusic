@@ -1,10 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import logo from "../assets/logo.svg";
-import back from "../assets/back.svg";
-import next from "../assets/next.svg";
-import pause from "../assets/pause.svg";
-import play from "../assets/play.svg";
+import logo from "../assets/brand/logo.svg";
+import back from "../assets/icons/back.svg";
+import next from "../assets/icons/next.svg";
+import pause from "../assets/icons/pause.svg";
+import play from "../assets/icons/play.svg";
+import angryIcon from "../assets/emotions/angry.png";
+import disgustIcon from "../assets/emotions/disgust.png";
+import fearIcon from "../assets/emotions/fear.png";
+import happyIcon from "../assets/emotions/happy.png";
+import neutralIcon from "../assets/emotions/neutral.png";
+import sadIcon from "../assets/emotions/sad.png";
+import surpriseIcon from "../assets/emotions/surprise.png";
 import "../styles/pages/playlist.css";
+
+const EMOTION_ICONS = {
+  angry: angryIcon,
+  disgust: disgustIcon,
+  fear: fearIcon,
+  happy: happyIcon,
+  neutral: neutralIcon,
+  sad: sadIcon,
+  surprise: surpriseIcon,
+};
 
 const formatTime = (seconds) => {
   const m = Math.floor(seconds / 60);
@@ -20,25 +37,46 @@ const formatDurationMs = (ms) => {
 function Playlist({ emotion, songs, onScanAgain }) {
   const audioRef = useRef(new Audio());
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
   const currentSong = songs[currentIndex];
+  const emotionImage = EMOTION_ICONS[emotion];
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!currentSong) return;
+
+    if (!currentSong.preview_url) {
+      Promise.resolve().then(() => setIsPlaying(false));
+      return;
+    }
+
     audio.src = currentSong.preview_url;
     audio.load();
-    if (isPlaying) audio.play().catch(() => {});
+    Promise.resolve().then(() => {
+      setCurrentTime(0);
+      setDuration(0);
+    });
+
+    if (isPlaying) {
+      audio
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
   }, [currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const audio = audioRef.current;
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onDurationChange = () => setDuration(audio.duration);
-    const onEnded = () => handleNext();
+    const onEnded = () => {
+      if (songs.length > 0) {
+        setCurrentIndex((prev) => (prev + 1) % songs.length);
+      }
+    };
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("durationchange", onDurationChange);
     audio.addEventListener("ended", onEnded);
@@ -51,26 +89,46 @@ function Playlist({ emotion, songs, onScanAgain }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePlay = () => {
+    if (!currentSong?.preview_url) return;
+
     const audio = audioRef.current;
     if (isPlaying) {
       audio.pause();
+      setIsPlaying(false);
     } else {
-      audio.play().catch(() => {});
+      audio
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
     }
-    setIsPlaying((prev) => !prev);
   };
 
-  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % songs.length);
-  const handlePrev = () =>
-    setCurrentIndex((prev) => (prev - 1 + songs.length) % songs.length);
+  const handleNext = () => {
+    if (songs.length > 0) {
+      setCurrentIndex((prev) => (prev + 1) % songs.length);
+    }
+  };
+  const handlePrev = () => {
+    if (songs.length > 0) {
+      setCurrentIndex((prev) => (prev - 1 + songs.length) % songs.length);
+    }
+  };
 
   const handleSelectSong = (index) => {
     setCurrentIndex(index);
-    setIsPlaying(true);
     const audio = audioRef.current;
     audio.src = songs[index].preview_url;
     audio.load();
-    audio.play().catch(() => {});
+
+    if (!songs[index].preview_url) {
+      setIsPlaying(false);
+      return;
+    }
+
+    audio
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => setIsPlaying(false));
   };
 
   const handleScrub = (e) => {
@@ -151,23 +209,38 @@ function Playlist({ emotion, songs, onScanAgain }) {
           </div>
 
           <div className="emotion-card">
+
             <div className="emotion-detected">
-              <div className="emotion-image" />
+
+              <div className="emotion-image">
+                {emotionImage && (
+                  <img src={emotionImage} alt="" className="emotion-image-icon" />
+                )}
+              </div>
+
               <div className="emotion-text">
                 <span className="emotion-label">{capitalise(emotion)}</span>
                 <span className="emotion-song-count">{songs.length} songs</span>
               </div>
+
             </div>
+
             <button className="button" onClick={onScanAgain}>
               Scan again
             </button>
+
           </div>
+          
         </div>
 
         <div className="playlist">
           <div className="playlist-header">
             <h1>Your Playlist</h1>
-            <svg className="soundwave" viewBox="0 0 72 32" aria-hidden="true">
+            <svg
+              className={`soundwave${isPlaying ? "" : " paused"}`}
+              viewBox="0 0 72 32"
+              aria-hidden="true"
+            >
               <rect
                 className="wave-bar wave-bar-1"
                 x="4"

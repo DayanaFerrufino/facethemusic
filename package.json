@@ -1,0 +1,8 @@
+{
+  "name": "facethemusic",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "start": "node scripts/start-dev.mjs"
+  }
+}

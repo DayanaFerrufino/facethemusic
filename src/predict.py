@@ -7,7 +7,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 model = load_model(os.path.join(BASE_DIR, "models", "emotion_model.keras"))
-EMOTIONS = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+EMOTIONS = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 # Load OpenCV face detector
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -36,10 +36,6 @@ def predict_emotion(frame):
 
     return frame
 
-# Run webcam
-cap = cv2.VideoCapture(0)
-print("Press 'q' to quit")
-
 def predict_emotion_from_frame(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
@@ -57,6 +53,3 @@ def predict_emotion_from_frame(frame):
     predictions = model.predict(face, verbose=0)
     emotion = EMOTIONS[np.argmax(predictions)]
     return emotion
-
-cap.release()
-cv2.destroyAllWindows()
