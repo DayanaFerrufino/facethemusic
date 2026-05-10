@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import catEmotion from "../assets/cat_emotion.svg";
+import catCamera from "../assets/cat_camera.svg";
+import catWait from "../assets/cat_wait.svg";
+import catError from "../assets/cat_error.svg";
 import logo from "../assets/logo.svg";
 import "../styles/pages/camera.css";
 
@@ -19,7 +23,8 @@ function Camera({ onGeneratePlaylist, error }) {
         setReady(true);
       })
       .catch((err) => {
-        console.error("Webcam error:", err);
+        console.error("Camera access failed:", err);
+        setCameraError("Camera access was blocked or is unavailable");
       });
 
     return () => {
@@ -28,7 +33,7 @@ function Camera({ onGeneratePlaylist, error }) {
   }, []);
 
   const handleCapture = () => {
-    if (!videoRef.current || capturing) return;
+    if (!videoRef.current || capturing || !ready) return;
     setCapturing(true);
 
     const canvas = document.createElement("canvas");
@@ -52,24 +57,54 @@ function Camera({ onGeneratePlaylist, error }) {
         <h1 className="topbar-title">Face The Music</h1>
       </div>
 
-      <div className="content">
+      <div className={`content${ready ? " content--ready" : " content--waiting"}`}>
         <div className="camera">
-          <video
-            ref={videoRef}
-            className="camera-feed"
-            autoPlay
-            playsInline
-            muted
-          />
+          {cameraError ? (
+            <div className="camera-container-error">
+              <img src={catError} alt="" className="camera-error-icon" />
+              <p>{cameraError}</p>
+            </div>
+          ) : !ready ? (
+            <div className="camera-container-waiting">
+              <img src={catWait} alt="" className="camera-waiting-icon" />
+              <p>Waiting for camera access...</p>
+            </div>
+          ) : (
+            <>
+              <video
+                ref={videoRef}
+                className="camera-feed"
+                autoPlay
+                playsInline
+                muted
+              />
+
+              <div className="camera-overlay">
+                <div className="face-frame">
+                  <span className="frame-corner top-left" />
+                  <span className="frame-corner top-right" />
+                  <span className="frame-corner bottom-left" />
+                  <span className="frame-corner bottom-right" />
+
+                  <img className="camera-instruction-icon" src={catCamera} alt="" />
+                  <p>
+                    Center your face in the frame
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="camera-hint">
-          <p>
-            {ready
-              ? "Position your face in frame, then hit Generate"
-              : "Waiting for camera access..."}
-          </p>
-        </div>
+        {ready && (
+          <div className="camera-hint">
+            <img src={catEmotion} alt="" className="camera-emotion-icon" />
+            <p>
+              Your emotion will appear here after scan
+            </p>
+          </div>
+
+        )}
       </div>
 
       {error && <p className="camera-error">{error}</p>}
