@@ -6,11 +6,15 @@ import catError from "../assets/cat_error.svg";
 import logo from "../assets/logo.svg";
 import "../styles/pages/camera.css";
 
+const API_URL = "http://localhost:8000";
+
 function Camera({ onGeneratePlaylist, error }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [hasFace, setHasFace] = useState(false);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -31,6 +35,58 @@ function Camera({ onGeneratePlaylist, error }) {
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
+
+  useEffect(() => {
+    if (!ready || cameraError) return;
+
+    let stopped = false;
+
+    const detectFace = async () => {
+      const video = videoRef.current;
+
+      if (!video || video.readyState < 2) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+
+      try {
+        const blob = await new Promise((resolve) => {
+          canvas.toBlob(resolve, "image/jpeg", 0.75);
+        });
+
+        if (!blob) return;
+
+        const formData = new FormData();
+        formData.append("file", blob, "face-check.jpg");
+
+        const response = await fetch(`${API_URL}/detect-face`, {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!stopped) {
+          setHasFace(Boolean(data.has_face));
+        }
+      } catch (err) {
+        console.error("Face detection failed:", err);
+        if (!stopped) {
+          setHasFace(false);
+        }
+      }
+    };
+
+    detectFace();
+    const intervalId = setInterval(detectFace, 900);
+
+    return () => {
+      stopped = true;
+      clearInterval(intervalId);
+    };
+  }, [ready, cameraError]);
 
   const handleCapture = () => {
     if (!videoRef.current || capturing || !ready) return;
@@ -86,12 +142,15 @@ function Camera({ onGeneratePlaylist, error }) {
                   <span className="frame-corner bottom-left" />
                   <span className="frame-corner bottom-right" />
 
-                  <img className="camera-instruction-icon" src={catCamera} alt="" />
-                  <p>
-                    Center your face in the frame
-                  </p>
+                  {!hasFace && (
+                    <div className="camera-instruction">
+                      <img className="camera-instruction-icon" src={catCamera} alt="" />
+                      <p>Center your face in the frame</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
             </>
           )}
         </div>

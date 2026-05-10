@@ -38,7 +38,11 @@ function Playlist({ emotion, songs, onScanAgain }) {
     const audio = audioRef.current;
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onDurationChange = () => setDuration(audio.duration);
-    const onEnded = () => handleNext();
+    const onEnded = () => {
+      if (songs.length > 0) {
+        setCurrentIndex((prev) => (prev + 1) % songs.length);
+      }
+    };
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("durationchange", onDurationChange);
     audio.addEventListener("ended", onEnded);

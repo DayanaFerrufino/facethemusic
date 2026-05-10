@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
-def build_model(num_classes=6):
+def build_model(num_classes=7):
     model = models.Sequential([
         # Block 1
         layers.Conv2D(32, (3,3), activation='relu', input_shape=(48, 48, 1)),

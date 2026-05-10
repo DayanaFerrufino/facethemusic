@@ -11,6 +11,9 @@ from predict import predict_emotion_from_frame
 from recommend import get_recommendations
 
 app = FastAPI()
+face_cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+)
 
 # Allow React frontend to talk to this API
 app.add_middleware(
@@ -23,6 +26,20 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"status": "facethemusic API running"}
+
+@app.post("/detect-face")
+async def detect_face(file: UploadFile = File(...)):
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    if frame is None:
+        return {"has_face": False}
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
+
+    return {"has_face": len(faces) > 0}
 
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):

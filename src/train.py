@@ -6,7 +6,7 @@ data_dir = "data"
 IMG_SIZE = 48
 BATCH_SIZE = 64
 EPOCHS = 30
-EMOTIONS = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+EMOTIONS = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
 # Data generators
 train_datagen = ImageDataGenerator(
@@ -36,7 +36,7 @@ test_gen = test_datagen.flow_from_directory(
 )
 
 # Build and compile
-model = build_model(num_classes=6)
+model = build_model(num_classes=7)
 model.compile(
     optimizer='adam',
     loss='categorical_crossentropy',
