@@ -6,6 +6,21 @@ import Playlist from "./pages/Playlist";
 
 const API_URL = "http://localhost:8000";
 
+function MusicNotesBackground() {
+  return (
+    <div className="notes-bg">
+      <span>𝄞</span>
+      <span>♫</span>
+      <span>♬</span>
+      <span>♪</span>
+      <span>♫</span>
+      <span>♪</span>
+      <span>♬</span>
+      <span>𝄞</span>
+    </div>
+  );
+}
+
 function App() {
   const [page, setPage] = useState("home");
   const [emotion, setEmotion] = useState(null);
@@ -58,37 +73,45 @@ function App() {
     setPage("playlist");
   };
 
+  let currentPage;
+
   if (page === "camera") {
-    return(
-      <Camera 
-        onGeneratePlaylist={handleGeneratePlaylist} 
+    currentPage = (
+      <Camera
+        onGeneratePlaylist={handleGeneratePlaylist}
         error={error}
         onPreviewEmotion={setPreviewEmotion}
       />
     );
-  }
-
-  if (page === "loader") {
-    return (
+  } else if (page === "loader") {
+    currentPage = (
       <Loader
         emotion={pendingPlaylist?.emotion || previewEmotion}
         isComplete={Boolean(pendingPlaylist)}
         onDone={handleLoaderDone}
       />
     );
-  }
-
-  if (page === "playlist") {
-    return (
+  } else if (page === "playlist") {
+    currentPage = (
       <Playlist
         emotion={emotion}
         songs={songs}
         onScanAgain={() => setPage("camera")}
       />
     );
+  } else {
+    currentPage = <Home onStart={() => setPage("camera")} />;
   }
 
-  return <Home onStart={() => setPage("camera")} />;
+  return (
+    <>
+      <MusicNotesBackground />
+
+      <main className="page-content">
+        {currentPage}
+      </main>
+    </>
+  );
 }
 
 export default App;
