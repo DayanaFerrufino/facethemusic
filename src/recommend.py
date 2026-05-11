@@ -1,23 +1,158 @@
-import urllib.request
-import urllib.parse
 import json
 import random
+import urllib.parse
+import urllib.request
+from pathlib import Path
 
-# Map each detected emotion to iTunes search terms
-# Each emotion has multiple terms so we can randomise results across calls
-# Deezer editorial playlist search terms per emotion
-EMOTION_SEARCH_TERMS = {
-    "happy":    ["pop", "funk", "disco", "upbeat indie", "feel good", "summer vibes", "good mood", "party hits"],
-    "sad":      ["sad songs", "heartbreak", "melancholy", "rainy day"],
-    "angry":    ["rock anthems", "metal", "workout rage", "hard rock"],
-    "fear":     ["dark", "suspense", "eerie", "horror"],
-    "surprise": ["experimental", "art pop", "jazz fusion", "eclectic indie"],
-    "neutral":  ["chill", "lo-fi", "focus", "background music"],
+import numpy as np
+import pandas as pd
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+MUSIC_DATA_PATH = BASE_DIR / "data" / "music" / "spotify_10000.csv"
+SENTIMENT_DATA_PATH = BASE_DIR / "data" / "music" / "music_sentiment.csv"
+ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
+ITUNES_CACHE = {}
+
+FEATURES = [
+    "danceability",
+    "energy",
+    "valence",
+    "acousticness",
+    "tempo",
+    "loudness",
+]
+
+SCORING_FEATURES = [
+    "danceability",
+    "energy",
+    "valence",
+    "acousticness",
+    "tempo_norm",
+    "loudness_norm",
+]
+
+EMOTION_PROFILES = {
+    "happy": {
+        "danceability": 0.78,
+        "energy": 0.78,
+        "valence": 0.88,
+        "acousticness": 0.20,
+        "tempo": 125,
+        "loudness": -5,
+    },
+    "sad": {
+        "danceability": 0.42,
+        "energy": 0.35,
+        "valence": 0.22,
+        "acousticness": 0.65,
+        "tempo": 85,
+        "loudness": -11,
+    },
+    "angry": {
+        "danceability": 0.55,
+        "energy": 0.92,
+        "valence": 0.32,
+        "acousticness": 0.08,
+        "tempo": 140,
+        "loudness": -4,
+    },
+    "fear": {
+        "danceability": 0.40,
+        "energy": 0.65,
+        "valence": 0.20,
+        "acousticness": 0.25,
+        "tempo": 115,
+        "loudness": -8,
+    },
+    "surprise": {
+        "danceability": 0.70,
+        "energy": 0.82,
+        "valence": 0.65,
+        "acousticness": 0.18,
+        "tempo": 132,
+        "loudness": -5,
+    },
+    "neutral": {
+        "danceability": 0.58,
+        "energy": 0.52,
+        "valence": 0.52,
+        "acousticness": 0.45,
+        "tempo": 105,
+        "loudness": -8,
+    },
+    "disgust": {
+        "danceability": 0.45,
+        "energy": 0.70,
+        "valence": 0.18,
+        "acousticness": 0.15,
+        "tempo": 120,
+        "loudness": -6,
+    },
 }
 
-DEEZER_SEARCH_URL = "https://api.deezer.com/search/playlist"
-DEEZER_PLAYLIST_URL = "https://api.deezer.com/playlist"
-ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
+
+def load_music_data():
+    df = pd.read_csv(MUSIC_DATA_PATH)
+
+    df = df.dropna(
+        subset=[
+            "track_name",
+            "first_artist",
+            *FEATURES,
+            "duration_ms",
+        ]
+    ).copy()
+
+    df["tempo_norm"] = (df["tempo"] - 60) / (180 - 60)
+    df["loudness_norm"] = (df["loudness"] - (-30)) / (3 - (-30))
+
+    return df
+
+
+MUSIC_DF = load_music_data()
+
+
+def scale_between(value, source_min, source_max, target_min, target_max):
+    if source_max == source_min:
+        return target_min
+
+    ratio = (value - source_min) / (source_max - source_min)
+    return target_min + ratio * (target_max - target_min)
+
+
+def apply_sentiment_dataset_profiles():
+    if not SENTIMENT_DATA_PATH.exists():
+        return
+
+    sentiment_df = pd.read_csv(SENTIMENT_DATA_PATH)
+
+    sentiment_features = ["tempo", "energy", "loudness"]
+    sentiment_profiles = sentiment_df.groupby("sentiment")[sentiment_features].mean()
+
+    for feature in sentiment_features:
+        source_min = sentiment_profiles[feature].min()
+        source_max = sentiment_profiles[feature].max()
+
+        target_values = [profile[feature] for profile in EMOTION_PROFILES.values()]
+        target_min = min(target_values)
+        target_max = max(target_values)
+
+        for emotion, row in sentiment_profiles.iterrows():
+            if emotion not in EMOTION_PROFILES:
+                continue
+
+            EMOTION_PROFILES[emotion][feature] = float(
+                scale_between(
+                    row[feature],
+                    source_min,
+                    source_max,
+                    target_min,
+                    target_max,
+                )
+            )
+
+
+apply_sentiment_dataset_profiles()
 
 
 def fetch_url(url):
@@ -28,98 +163,103 @@ def fetch_url(url):
         print(f"[fetch] Failed for {url}: {e}")
         return None
 
-# adding deezer for better song suggestions
-def search_deezer_playlists(term, limit=5):
-    params = urllib.parse.urlencode({"q": term, "limit": limit})
-    data = fetch_url(f"{DEEZER_SEARCH_URL}?{params}")
-    if not data:
-        return []
-    return data.get("data", [])
 
+def get_itunes_metadata(track_name, artist_name):
+    cache_key = (str(track_name).lower(), str(artist_name).lower())
 
-def get_deezer_playlist_tracks(playlist_id, limit=30):
-    data = fetch_url(f"{DEEZER_PLAYLIST_URL}/{playlist_id}/tracks?limit={limit}")
-    if not data:
-        return []
-    return data.get("data", [])
+    if cache_key in ITUNES_CACHE:
+        return ITUNES_CACHE[cache_key]
 
+    params = urllib.parse.urlencode(
+        {
+            "term": f"{track_name} {artist_name}",
+            "entity": "song",
+            "media": "music",
+            "limit": 3,
+            "country": "US",
+            "lang": "en_us",
+        }
+    )
 
-def get_itunes_preview(track_name, artist_name):
-    query = f"{track_name} {artist_name}"
-    params = urllib.parse.urlencode({
-        "term": query,
-        "entity": "song",
-        "media": "music",
-        "limit": 3,
-        "country": "US",
-        "lang": "en_us",
-    })
     data = fetch_url(f"{ITUNES_SEARCH_URL}?{params}")
-    if not data:
-        return None
+    result = None
 
-    for item in data.get("results", []):
-        preview = item.get("previewUrl")
-        artwork = item.get("artworkUrl100", "")
-        if preview:
-            return {
-                "preview_url": preview,
-                "artwork": artwork.replace("100x100", "300x300"),
-                "duration_ms": item.get("trackTimeMillis", 0),
-            }
-    return None
+    if data:
+        for item in data.get("results", []):
+            artwork = item.get("artworkUrl100", "")
+            preview = item.get("previewUrl", "")
+
+            if artwork or preview:
+                result = {
+                    "artwork": artwork.replace("100x100", "300x300"),
+                    "preview_url": preview,
+                    "duration_ms": item.get("trackTimeMillis", 0),
+                }
+                break
+
+    ITUNES_CACHE[cache_key] = result
+    return result
+
+
+def clean_optional_value(value):
+    if pd.isna(value):
+        return ""
+    return str(value)
+
+
+def normalize_profile(profile):
+    profile = profile.copy()
+    profile["tempo_norm"] = (profile.pop("tempo") - 60) / (180 - 60)
+    profile["loudness_norm"] = (profile.pop("loudness") - (-30)) / (3 - (-30))
+    return profile
 
 
 def get_recommendations(emotion, count=20):
-    emotion = emotion.lower()
-    terms = EMOTION_SEARCH_TERMS.get(emotion, EMOTION_SEARCH_TERMS["neutral"])
-    random.shuffle(terms)
+    emotion = (emotion or "neutral").lower()
+    profile = normalize_profile(
+        EMOTION_PROFILES.get(emotion, EMOTION_PROFILES["neutral"])
+    )
 
-    candidate_tracks = []
-    seen_ids = set()
+    scores = np.zeros(len(MUSIC_DF))
 
-    for term in terms:
-        playlists = search_deezer_playlists(term, limit=3)
-        if not playlists:
+    for feature in SCORING_FEATURES:
+        scores += (MUSIC_DF[feature] - profile[feature]) ** 2
+
+    ranked = MUSIC_DF.assign(score=scores).sort_values("score")
+
+    # Pick from the best matches, then shuffle so results are not identical every scan.
+    pool = ranked.head(300).sample(frac=1, random_state=random.randint(1, 999999))
+
+    songs = []
+
+    for _, song in pool.head(120).iterrows():
+        itunes = get_itunes_metadata(song["track_name"], song["first_artist"])
+
+        artwork = ""
+        preview_url = clean_optional_value(song.get("track_preview", ""))
+        duration_ms = int(song["duration_ms"])
+
+        if itunes:
+            artwork = itunes.get("artwork") or ""
+            preview_url = preview_url or itunes.get("preview_url")
+            duration_ms = int(itunes.get("duration_ms") or duration_ms)
+
+        if not preview_url:
             continue
 
-        playlists.sort(key=lambda p: p.get("fans", 0), reverse=True)
-        playlist = playlists[0]
-        tracks = get_deezer_playlist_tracks(playlist["id"], limit=40)
+        songs.append(
+            {
+                "id": str(song["track_id"]),
+                "name": song["track_name"],
+                "artist": song["first_artist"],
+                "album": song.get("album_name", ""),
+                "artwork": artwork,
+                "preview_url": preview_url,
+                "duration_ms": duration_ms,
+            }
+        )
 
-        for track in tracks:
-            track_id = track.get("id")
-            if track_id and track_id not in seen_ids:
-                seen_ids.add(track_id)
-                candidate_tracks.append({
-                    "name": track.get("title", "Unknown"),
-                    "artist": track.get("artist", {}).get("name", "Unknown"),
-                    "album": track.get("album", {}).get("title", ""),
-                    "deezer_artwork": track.get("album", {}).get("cover_medium", ""),
-                })
-
-        if len(candidate_tracks) >= count * 2:
+        if len(songs) >= count:
             break
 
-    random.shuffle(candidate_tracks)
-
-    results = []
-    for track in candidate_tracks:
-        if len(results) >= count:
-            break
-
-        itunes = get_itunes_preview(track["name"], track["artist"])
-        if not itunes:
-            continue
-
-        results.append({
-            "id": f"{track['name']}_{track['artist']}".replace(" ", "_"),
-            "name": track["name"],
-            "artist": track["artist"],
-            "album": track["album"],
-            "artwork": itunes["artwork"] or track["deezer_artwork"],
-            "preview_url": itunes["preview_url"],
-            "duration_ms": itunes["duration_ms"],
-        })
-
-    return results
+    return songs
