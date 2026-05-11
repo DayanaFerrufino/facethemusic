@@ -1,6 +1,6 @@
 # Face The Music
 
-Face The Music is a full-stack emotion-based music recommendation app. The app uses a webcam image to detect the user's facial emotion, then generates a playlist that matches the detected mood. The frontend is built with React and Vite, while the backend uses FastAPI, OpenCV, and a TensorFlow/Keras emotion detection model.
+Face The Music is a full-stack emotion-based music recommendation app. The app uses a webcam image to detect the user's facial emotion, then generates a playlist that matches the detected mood. The frontend is built with React and Vite, while the backend uses FastAPI, OpenCV, a TensorFlow/Keras emotion detection model, and an audio-feature-based recommendation system.
 
 ### Course Information
 **By:** Chenilyn Joy Espineda and Dayana Ferrufino<br>
@@ -12,21 +12,34 @@ Face The Music is a full-stack emotion-based music recommendation app. The app u
 ---
 
 ## 💻 Tech Stack
-* Python
-* TensorFlow / Keras
-* OpenCV
-* FastAPI
-* Uvicorn
-* NumPy
+### Frontend
 * React
 * Vite
 * JavaScript
 * CSS
+
+### Backend
+* Python
+* FastAPI
+* Uvicorn
+
+### Machine Learning and Data Processing
+* TensorFlow / Keras
+* OpenCV
+* NumPy
+* Pandas
+
+### Tools
 * Node.js
 * npm
-* Deezer API
-* iTunes Search API
+
+### Datasets
 * FER-2013 facial emotion dataset
+* Spotify 10,000 Songs dataset
+* Emotion-Aware Music Sentiment dataset
+
+### External API
+* iTunes Search API
 
 <br>
 
@@ -61,10 +74,10 @@ If you are on Windows, activate the virtual environment with:
 Install the required Python packages:
 ```bash
 pip install --upgrade pip
-pip install tensorflow opencv-python fastapi uvicorn python-multipart numpy scipy pillow kagglehub
+pip install tensorflow opencv-python fastapi uvicorn python-multipart numpy pandas scipy pillow kagglehub
 ```
 
-These packages are used for model training, image processing, the backend API, and file uploads from the frontend.
+These packages are used for model training, image processing, the backend API, music recommendation, and file uploads from the frontend.
 
 <br>
 
@@ -78,8 +91,53 @@ cd ..
 
 <br>
 
-### Step 5: Prepare the Facial Emotion Dataset
-This project expects the facial emotion dataset to be placed inside a `data` folder with this structure:
+### Step 5: Prepare the Music Recommendation Datasets
+The music recommendation CSV files are not included in this repository. Download them from Kaggle and place them under:
+```bash
+data/music/
+  spotify_10000.csv
+  music_sentiment.csv
+```
+
+These files are used by `src/recommend.py`:
+* `spotify_10000.csv` provides real songs and Spotify-style audio features such as `danceability`, `energy`, `valence`, `acousticness`, `tempo`, and `loudness`
+* `music_sentiment.csv` provides emotion-labeled audio feature averages used to adjust the recommender's emotion profiles
+
+Download and copy the datasets from the terminal with `kagglehub`:
+```bash
+python - <<'PY'
+import kagglehub
+import shutil
+from pathlib import Path
+
+music_dir = Path("data/music")
+music_dir.mkdir(parents=True, exist_ok=True)
+
+spotify_path = Path(kagglehub.dataset_download("jeremycte/spotify-10000-songs-dataset"))
+sentiment_path = Path(kagglehub.dataset_download("ziya07/emotion-aware-music-sentiment-dataset"))
+
+shutil.copy(spotify_path / "data.csv", music_dir / "spotify_10000.csv")
+shutil.copy(sentiment_path / "music_sentiment_dataset.csv", music_dir / "music_sentiment.csv")
+
+print("Music datasets copied into data/music")
+PY
+```
+
+After running the command, confirm the music files exist:
+```bash
+ls data/music
+```
+
+You should see:
+```bash
+music_sentiment.csv
+spotify_10000.csv
+```
+
+<br>
+
+### Step 6: Prepare the Facial Emotion Dataset
+The facial emotion dataset is only required if you want to retrain the emotion detection model. This project expects the FER-2013 facial emotion dataset to be placed inside a `data` folder with this structure:
 ```bash
 data/
   train/
@@ -120,16 +178,21 @@ mv data/validation data/test
 
 <br>
 
-### Step 6: Create the Models Folder
-The trained emotion model is saved into the `models` folder:
+### Step 7: Create the Models Folder
+The trained emotion model should be placed in the `models` folder:
 ```bash
 mkdir -p models
 ```
 
 <br>
 
-### Step 7: Train the Emotion Model
-Train the TensorFlow/Keras emotion classifier:
+### Step 8: Add or Train the Emotion Model
+The backend requires this file before it can run:
+```bash
+models/emotion_model.keras
+```
+
+If you need to retrain the TensorFlow/Keras emotion classifier, run:
 ```bash
 python src/train.py
 ```
@@ -143,7 +206,17 @@ This file is required before running the backend because the API loads the train
 
 <br>
 
-### Step 8: Check the Backend
+### Step 9: Verify the Backend Imports
+Before starting the app, confirm the backend can load the model and recommender:
+```bash
+python -c "import api.main; print('api ok')"
+```
+
+If this prints `api ok`, the backend dependencies, model, and recommendation files are available.
+
+<br>
+
+### Step 10: Check the Backend
 Start the FastAPI backend:
 ```bash
 python -m uvicorn api.main:app --reload
@@ -165,7 +238,7 @@ Stop the backend with `CTRL + C` before continuing if you want to use the automa
 
 <br>
 
-### Step 9: Check the Frontend
+### Step 11: Check the Frontend
 In a separate terminal, start the frontend:
 ```bash
 cd frontend
@@ -244,7 +317,14 @@ The backend:
 <br>
 
 ### Step 3: Playlist Generation
-After detecting the emotion, the backend searches for music using emotion-based search terms. Deezer is used to find playlist tracks, and the iTunes Search API is used to fetch playable preview URLs and album artwork.
+After detecting the emotion, the backend generates a playlist using a hybrid recommendation approach:
+
+* The Emotion-Aware Music Sentiment dataset adjusts the emotion profile for `tempo`, `energy`, and `loudness`
+* The Spotify 10,000 Songs dataset provides the candidate songs and audio features
+* Songs are scored by comparing their audio features to the detected emotion profile
+* The iTunes Search API fills in missing preview URLs and album artwork
+
+This allows the app to consider songs from the full local music dataset while still showing playable previews and album images.
 
 <br>
 
@@ -279,6 +359,9 @@ facethemusic/
       styles/
     package.json
   data/
+    music/
+      music_sentiment.csv
+      spotify_10000.csv
     train/
     test/
   models/
@@ -295,7 +378,9 @@ facethemusic/
 
 ## ✅ Notes
 
-* The `data` and `models` folders are not committed to GitHub because they can be large.
+* The `data` folder is not committed. Download the music CSV files into `data/music` before running the recommender.
+* The FER-2013 image folders in `data/train` and `data/test` are also not committed because they are large and only needed for retraining.
+* The `models` folder is not committed. Add `models/emotion_model.keras` manually or train it with `python src/train.py`.
 * If `npm start` says port `8000` is already in use, stop the old backend process and run the command again.
 * The browser may ask for camera permission. The camera feature will not work unless access is allowed.
 * Emotion detection accuracy depends on lighting, camera quality, face position, and the trained model accuracy.

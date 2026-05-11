@@ -42,6 +42,7 @@
 /* Card Layout */
 .playlist-page .current-song {
   width: 100%;
+  min-width: 0;
   height: auto;
   border: none;
   border-radius: 24px;
@@ -71,6 +72,9 @@
 
 /* Song Information Layout */
 .playlist-page .current-song-info {
+  width: 100%;
+  max-width: 280px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -79,15 +83,14 @@
 
 /* Song Name */
 .playlist-page .current-song-name {
+  width: 100%;
   color: var(--text-primary);
   font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
-  max-width: 100%;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Artist */
