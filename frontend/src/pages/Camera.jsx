@@ -14,6 +14,8 @@ import surpriseIcon from "../assets/emotions/surprise.png";
 import "../styles/pages/camera.css";
 
 const API_URL = "http://localhost:8000";
+
+// Maps each emotion name from the backend to the image shown in the UI.
 const EMOTION_ICONS = {
   angry: angryIcon,
   disgust: disgustIcon,
@@ -25,18 +27,21 @@ const EMOTION_ICONS = {
 };
 
 function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const [ready, setReady] = useState(false);
-  const [capturing, setCapturing] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-  const [hasFace, setHasFace] = useState(false);
-  const [detectedEmotion, setDetectedEmotion] = useState(null);
+  
+  const videoRef = useRef(null);                                    // videoRef points to the live video element so we can read frames from it.
+  const streamRef = useRef(null);                                   // streamRef stores the camera stream so we can stop it when leaving the page.
+  const [ready, setReady] = useState(false);                        // Tracks whether the camera is ready to show and capture video.
+  const [capturing, setCapturing] = useState(false);                // Prevents the user from clicking Generate playlist multiple times at once.
+  const [cameraError, setCameraError] = useState("");               // Stores camera permission or device errors.
+  const [hasFace, setHasFace] = useState(false);                    // Tracks whether the backend detected a face in the current camera frame.  
+  const [detectedEmotion, setDetectedEmotion] = useState(null);     // Stores the live emotion preview returned by the backend.
 
   useEffect(() => {
+    // Ask the browser for camera access when the camera page loads.
     navigator.mediaDevices
       .getUserMedia({ video: true })
       .then((stream) => {
+        // Save the stream and connect it to the video element.
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -44,16 +49,19 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
         setReady(true);
       })
       .catch((err) => {
+        // If camera access fails, show a clear message in the UI.
         console.error("Camera access failed:", err);
         setCameraError("Camera access was blocked or is unavailable");
       });
 
     return () => {
+      // Stop the camera when the component closes so it does not keep running.
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
 
   useEffect(() => {
+    // Do not start face checks until the camera is ready and has no error.
     if (!ready || cameraError) return;
 
     let stopped = false;
@@ -63,7 +71,7 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
       const video = videoRef.current;
       if (!video || video.readyState < 2) return;
 
-      // Scale down to max 320px wide
+      // Make a smaller copy of the camera frame so face checks are faster.
       const scale = Math.min(1, 320 / video.videoWidth);
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(video.videoWidth * scale);
@@ -73,18 +81,21 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
         .drawImage(video, 0, 0, canvas.width, canvas.height);
 
       try {
+        // Convert the frame to a JPEG blob so it can be sent to the backend.
         const blob = await new Promise(
-          (resolve) => canvas.toBlob(resolve, "image/jpeg", 0.6), // lower quality is fine for detection
+          (resolve) => canvas.toBlob(resolve, "image/jpeg", 0.6),
         );
         if (!blob || stopped) return;
 
-        // Cancel the previous request if it's still pending
+        // Cancel the previous face check if it is still running.
         abortRef.current?.abort();
         abortRef.current = new AbortController();
 
+        // FormData is used because the backend expects an uploaded image file.
         const formData = new FormData();
         formData.append("file", blob, "face-check.jpg");
 
+        // Send the frame to the backend so it can detect a face and emotion.
         const response = await fetch(`${API_URL}/detect-face`, {
           method: "POST",
           body: formData,
@@ -94,13 +105,17 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
         const data = await response.json();
         if (stopped) return;
 
+        // Update the camera UI with the latest face and emotion result.
         const nextHasFace = Boolean(data.has_face);
         const nextEmotion = nextHasFace ? data.emotion || null : null;
         setHasFace(nextHasFace);
         setDetectedEmotion(nextEmotion);
         onPreviewEmotion?.(nextEmotion);
       } catch (err) {
-        if (err.name === "AbortError") return; // silently ignore cancelled requests
+        // AbortError is expected when a newer face check replaces an older one.
+        if (err.name === "AbortError") return;
+
+        // For other errors, reset the preview so the UI does not show stale data.
         console.error("Face detection failed:", err);
         if (!stopped) {
           setHasFace(false);
@@ -110,10 +125,12 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
       }
     };
 
+    // Run one check immediately, then keep checking while the camera is open.
     detectFace();
     const intervalId = setInterval(detectFace, 600);
 
     return () => {
+      // Stop the interval and any pending request when leaving the camera page.
       stopped = true;
       clearInterval(intervalId);
       abortRef.current?.abort();
@@ -121,9 +138,11 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
   }, [ready, cameraError, onPreviewEmotion]);
 
   const handleCapture = () => {
+    // Do nothing if the camera is not ready or a capture is already in progress.
     if (!videoRef.current || capturing || !ready) return;
     setCapturing(true);
 
+    // Copy the current video frame into a canvas so it can become an image file.
     const canvas = document.createElement("canvas");
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
@@ -131,6 +150,7 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
 
     canvas.toBlob(
       (blob) => {
+        // Send the captured image to App.jsx so it can request a playlist.
         onGeneratePlaylist(blob);
       },
       "image/jpeg",
@@ -149,6 +169,7 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
         className={`content${ready ? " content--ready" : " content--waiting"}`}
       >
         <div className="camera">
+          {/* Show camera error, waiting state, or live camera feed. */}
           {cameraError ? (
             <div className="camera-container-error">
               <img src={catError} alt="" className="camera-error-icon" />
@@ -161,6 +182,7 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
             </div>
           ) : (
             <>
+              {/* Live webcam preview. */}
               <video
                 ref={videoRef}
                 className="camera-feed"
@@ -171,11 +193,13 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
 
               <div className="camera-overlay">
                 <div className="face-frame">
+                  {/* Frame corners guide the user where to position their face. */}
                   <span className="frame-corner top-left" />
                   <span className="frame-corner top-right" />
                   <span className="frame-corner bottom-left" />
                   <span className="frame-corner bottom-right" />
 
+                  {/* Show instructions only when no face is detected. */}
                   {!hasFace && (
                     <div className="camera-instruction">
                       <img
@@ -192,6 +216,7 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
           )}
         </div>
 
+        {/* Emotion preview panel appears after the camera is ready. */}
         {ready && (
           <div
             className={`camera-emotion${
@@ -218,6 +243,7 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
 
       {error && <p className="camera-error">{error}</p>}
 
+      {/* Button captures the current frame and starts playlist generation. */}
       <button
         className={`button${!ready || capturing ? " button--disabled" : ""}`}
         onClick={handleCapture}

@@ -13,6 +13,7 @@ import sadIcon from "../assets/emotions/sad.png";
 import surpriseIcon from "../assets/emotions/surprise.png";
 import "../styles/pages/playlist.css";
 
+// Maps the detected emotion to the image shown in the emotion card.
 const EMOTION_ICONS = {
   angry: angryIcon,
   disgust: disgustIcon,
@@ -23,36 +24,62 @@ const EMOTION_ICONS = {
   surprise: surpriseIcon,
 };
 
+// Converts seconds into a readable time format like 1:05.
 const formatTime = (seconds) => {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
+// Converts song duration from milliseconds into readable time.
 const formatDurationMs = (ms) => {
   const totalSecs = Math.floor((ms || 0) / 1000);
   return formatTime(totalSecs);
 };
 
-function Playlist({ emotion, songs, onScanAgain }) {
-  const audioRef = useRef(new Audio());
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+// Solid colors used when a song does not have album artwork.
+const PLACEHOLDER_COLORS = [
+  "#ff6b6b",
+  "#4dabf7",
+  "#51cf66",
+  "#ffd43b",
+  "#9775fa",
+  "#ff922b",
+  "#20c997",
+];
 
+// Picks a placeholder color based on the song position.
+const getPlaceholderColor = (index) =>
+  PLACEHOLDER_COLORS[index % PLACEHOLDER_COLORS.length];
+
+// Shortens long titles inside missing-artwork boxes.
+const getPlaceholderTitle = (title) =>
+  title && title.length > 28 ? `${title.slice(0, 28)}...` : title || "Song";
+
+function Playlist({ emotion, songs, onScanAgain }) {
+  
+  const audioRef = useRef(new Audio());                   // Stores the browser audio player without rendering an audio element.
+  const [currentIndex, setCurrentIndex] = useState(0);    // Tracks which song in the playlist is currently selected.
+  const [isPlaying, setIsPlaying] = useState(true);       // Controls the play/pause button and soundwave animation.
+  const [currentTime, setCurrentTime] = useState(0);      // Tracks playback time for the scrubber and current time label.
+  const [duration, setDuration] = useState(0);            // Stores the current song duration for the scrubber and end time label.  
+
+  // Gets the selected song and emotion image for the page.
   const currentSong = songs[currentIndex];
   const emotionImage = EMOTION_ICONS[emotion];
 
   useEffect(() => {
+    // Load a new audio preview whenever the selected song changes.
     const audio = audioRef.current;
     if (!currentSong) return;
 
+    // If the song has no preview URL, stop playback safely.
     if (!currentSong.preview_url) {
       Promise.resolve().then(() => setIsPlaying(false));
       return;
     }
 
+    // Set the audio source and reset the playback timer for the new song.
     audio.src = currentSong.preview_url;
     audio.load();
     Promise.resolve().then(() => {
@@ -60,6 +87,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
       setDuration(0);
     });
 
+    // If the player was already playing, start the new song automatically.
     if (isPlaying) {
       audio
         .play()
@@ -70,8 +98,11 @@ function Playlist({ emotion, songs, onScanAgain }) {
 
   useEffect(() => {
     const audio = audioRef.current;
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onDurationChange = () => setDuration(audio.duration);
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);   // Keep React state synced with the browser audio player's current time.
+    const onDurationChange = () => setDuration(audio.duration);     // Store the audio duration when the browser loads it.
+
+    // Move to the next song automatically when the current preview ends.
     const onEnded = () => {
       if (songs.length > 0) {
         setCurrentIndex((prev) => (prev + 1) % songs.length);
@@ -81,6 +112,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
     audio.addEventListener("durationchange", onDurationChange);
     audio.addEventListener("ended", onEnded);
     return () => {
+      // Clean up audio listeners and stop playback when leaving the page.
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("durationchange", onDurationChange);
       audio.removeEventListener("ended", onEnded);
@@ -89,8 +121,10 @@ function Playlist({ emotion, songs, onScanAgain }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePlay = () => {
+    // Ignore play/pause clicks if the current song has no preview.
     if (!currentSong?.preview_url) return;
 
+    // Pause if playing, otherwise try to start playback.
     const audio = audioRef.current;
     if (isPlaying) {
       audio.pause();
@@ -104,17 +138,20 @@ function Playlist({ emotion, songs, onScanAgain }) {
   };
 
   const handleNext = () => {
+    // Move forward and wrap to the first song after the last song.
     if (songs.length > 0) {
       setCurrentIndex((prev) => (prev + 1) % songs.length);
     }
   };
   const handlePrev = () => {
+    // Move backward and wrap to the last song before the first song.
     if (songs.length > 0) {
       setCurrentIndex((prev) => (prev - 1 + songs.length) % songs.length);
     }
   };
 
   const handleSelectSong = (index) => {
+    // Select a song from the playlist and try to play it right away.
     setCurrentIndex(index);
     const audio = audioRef.current;
     audio.src = songs[index].preview_url;
@@ -132,6 +169,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
   };
 
   const handleScrub = (e) => {
+    // Convert the click position on the scrubber into a new audio time.
     const rect = e.currentTarget.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
     const newTime = ratio * duration;
@@ -139,7 +177,10 @@ function Playlist({ emotion, songs, onScanAgain }) {
     setCurrentTime(newTime);
   };
 
+  // Percent used by CSS to fill the scrubber bar.
   const scrubPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Capitalizes the detected emotion for display.
   const capitalise = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
@@ -152,6 +193,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
 
       <div className="content">
         <div className="player-panel">
+          {/* Current song player with album art, scrubber, and controls. */}
           <div className="current-song">
             {currentSong?.artwork ? (
               <img
@@ -160,7 +202,14 @@ function Playlist({ emotion, songs, onScanAgain }) {
                 alt={currentSong.name}
               />
             ) : (
-              <div className="current-song-image" />
+              <div
+                className="current-song-image song-image-placeholder"
+                style={{
+                  "--placeholder-color": getPlaceholderColor(currentIndex),
+                }}
+              >
+                <span>{getPlaceholderTitle(currentSong?.name)}</span>
+              </div>
             )}
 
             <div className="current-song-info">
@@ -173,6 +222,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
             </div>
 
             <div className="scrubber" onClick={handleScrub}>
+              {/* CSS variable controls the scrubber fill and handle position. */}
               <div
                 className="scrubber-bar"
                 style={{ "--scrub": `${scrubPercent}%` }}
@@ -212,12 +262,14 @@ function Playlist({ emotion, songs, onScanAgain }) {
 
             <div className="emotion-detected">
 
+              {/* Shows the emotion image that matches the detected emotion. */}
               <div className="emotion-image">
                 {emotionImage && (
                   <img src={emotionImage} alt="" className="emotion-image-icon" />
                 )}
               </div>
 
+              {/* Shows the detected emotion name and playlist size. */}
               <div className="emotion-text">
                 <span className="emotion-label">{capitalise(emotion)}</span>
                 <span className="emotion-song-count">{songs.length} songs</span>
@@ -225,6 +277,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
 
             </div>
 
+            {/* Returns to the camera page for a new scan. */}
             <button className="button" onClick={onScanAgain}>
               Scan again
             </button>
@@ -236,6 +289,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
         <div className="playlist">
           <div className="playlist-header">
             <h1>Your Playlist</h1>
+            {/* Soundwave animates while playing and pauses when music is paused. */}
             <svg
               className={`soundwave${isPlaying ? "" : " paused"}`}
               viewBox="0 0 72 32"
@@ -309,6 +363,7 @@ function Playlist({ emotion, songs, onScanAgain }) {
           </div>
 
           <div className="playlist-content">
+            {/* Render every recommended song as a clickable playlist row. */}
             {songs.map((song, index) => (
               <div
                 key={song.id}
@@ -322,9 +377,17 @@ function Playlist({ emotion, songs, onScanAgain }) {
                     alt={song.name}
                   />
                 ) : (
-                  <div className="song-image" />
+                  <div
+                    className="song-image song-image-placeholder"
+                    style={{
+                      "--placeholder-color": getPlaceholderColor(index),
+                    }}
+                  >
+                    <span>{getPlaceholderTitle(song.name)}</span>
+                  </div>
                 )}
                 <div className="song-info">
+                  {/* Song title and artist from the recommendation response. */}
                   <span className="song-name">{song.name}</span>
                   <span className="song-artist">{song.artist}</span>
                 </div>

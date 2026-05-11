@@ -70,6 +70,40 @@
   margin-bottom: 16px;
 }
 
+/* Missing Artwork Placeholder */
+.playlist-page .song-image-placeholder {
+  background-color: var(--placeholder-color, var(--color-pink));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.playlist-page .song-image-placeholder span {
+  width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.playlist-page .current-song-image.song-image-placeholder span {
+  -webkit-line-clamp: 3;
+  font-size: 22px;
+}
+
+.playlist-page .song-image.song-image-placeholder {
+  padding: 6px;
+}
+
+.playlist-page .song-image.song-image-placeholder span {
+  -webkit-line-clamp: 2;
+  font-size: 8px;
+}
+
 /* Song Information Layout */
 .playlist-page .current-song-info {
   width: 100%;
@@ -533,6 +567,10 @@
   border-radius: 10px;
   background-color: var(--background-main);
   flex-shrink: 0;
+}
+
+.playlist-page .song-image.song-image-placeholder {
+  background-color: var(--placeholder-color, var(--color-pink));
 }
 
 /* Song Info */
