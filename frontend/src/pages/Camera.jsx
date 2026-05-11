@@ -57,23 +57,30 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
     if (!ready || cameraError) return;
 
     let stopped = false;
+    const abortRef = { current: null };
 
     const detectFace = async () => {
       const video = videoRef.current;
-
       if (!video || video.readyState < 2) return;
 
+      // Scale down to max 320px wide
+      const scale = Math.min(1, 320 / video.videoWidth);
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d").drawImage(video, 0, 0);
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
+      canvas
+        .getContext("2d")
+        .drawImage(video, 0, 0, canvas.width, canvas.height);
 
       try {
-        const blob = await new Promise((resolve) => {
-          canvas.toBlob(resolve, "image/jpeg", 0.75);
-        });
+        const blob = await new Promise(
+          (resolve) => canvas.toBlob(resolve, "image/jpeg", 0.6), // lower quality is fine for detection
+        );
+        if (!blob || stopped) return;
 
-        if (!blob) return;
+        // Cancel the previous request if it's still pending
+        abortRef.current?.abort();
+        abortRef.current = new AbortController();
 
         const formData = new FormData();
         formData.append("file", blob, "face-check.jpg");
@@ -81,18 +88,19 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
         const response = await fetch(`${API_URL}/detect-face`, {
           method: "POST",
           body: formData,
+          signal: abortRef.current.signal,
         });
 
         const data = await response.json();
+        if (stopped) return;
 
-        if (!stopped) {
-          const nextHasFace = Boolean(data.has_face);
-          const nextEmotion = nextHasFace ? data.emotion || null : null;
-          setHasFace(nextHasFace);
-          setDetectedEmotion(nextEmotion);
-          onPreviewEmotion?.(nextEmotion);
-        }
+        const nextHasFace = Boolean(data.has_face);
+        const nextEmotion = nextHasFace ? data.emotion || null : null;
+        setHasFace(nextHasFace);
+        setDetectedEmotion(nextEmotion);
+        onPreviewEmotion?.(nextEmotion);
       } catch (err) {
+        if (err.name === "AbortError") return; // silently ignore cancelled requests
         console.error("Face detection failed:", err);
         if (!stopped) {
           setHasFace(false);
@@ -103,11 +111,12 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
     };
 
     detectFace();
-    const intervalId = setInterval(detectFace, 1500);
+    const intervalId = setInterval(detectFace, 600);
 
     return () => {
       stopped = true;
       clearInterval(intervalId);
+      abortRef.current?.abort();
     };
   }, [ready, cameraError, onPreviewEmotion]);
 
@@ -136,7 +145,9 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
         <h1 className="topbar-title">Face The Music</h1>
       </div>
 
-      <div className={`content${ready ? " content--ready" : " content--waiting"}`}>
+      <div
+        className={`content${ready ? " content--ready" : " content--waiting"}`}
+      >
         <div className="camera">
           {cameraError ? (
             <div className="camera-container-error">
@@ -167,13 +178,16 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
 
                   {!hasFace && (
                     <div className="camera-instruction">
-                      <img className="camera-instruction-icon" src={catCamera} alt="" />
+                      <img
+                        className="camera-instruction-icon"
+                        src={catCamera}
+                        alt=""
+                      />
                       <p>Center your face in the frame</p>
                     </div>
                   )}
                 </div>
               </div>
-
             </>
           )}
         </div>
@@ -199,7 +213,6 @@ function Camera({ onGeneratePlaylist, error, onPreviewEmotion }) {
                 : "Your emotion will appear here after scan"}
             </p>
           </div>
-
         )}
       </div>
 

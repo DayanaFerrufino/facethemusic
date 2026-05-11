@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
+from collections import deque, Counter
 import os
 
 # Load model
@@ -11,6 +12,20 @@ EMOTIONS = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 # Load OpenCV face detector
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+# Rolling window of recent emotions
+_emotion_history = deque(maxlen=7)
+
+def get_stable_emotion(history):
+    if not history:
+        return "neutral"
+    counts = Counter(history)
+    top, top_count = counts.most_common(1)[0]
+    # Only switch if the winner has at least 5 out of 7 votes
+    if top_count >= 5:
+        return top
+    # Otherwise return whatever the current stable emotion is
+    return history[-1]
 
 def predict_emotion(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -51,5 +66,10 @@ def predict_emotion_from_frame(frame):
     face = np.expand_dims(face, axis=0)
 
     predictions = model.predict(face, verbose=0)
-    emotion = EMOTIONS[np.argmax(predictions)]
-    return emotion
+    probs = predictions[0].copy()
+
+    confidence = float(np.max(probs))
+    emotion = EMOTIONS[np.argmax(probs)]
+
+    _emotion_history.append(emotion)
+    return get_stable_emotion(_emotion_history)
